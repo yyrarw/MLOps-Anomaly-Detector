@@ -139,7 +139,7 @@ celerybeat.pid
 
 # RabbitMQ
 mnesia/
-rabbitmq/
+rabbitmq/data/
 rabbitmq-data/
 
 # ActiveMQ
@@ -215,3 +215,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Docker volumes data
+database/data/

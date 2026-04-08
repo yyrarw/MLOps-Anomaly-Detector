@@ -1,0 +1,50 @@
+services:
+  app:
+    build: ./app
+    env_file:
+      - ./app/.env
+    volumes:
+      - ./app/src:/app/src
+    depends_on:
+      - database
+      - rabbitmq
+    networks:
+      - app-network
+
+  web-proxy:
+    build: ./web-proxy
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./rabbitmq/data:/var/lib/rabbitmq
+    restart: on-failure
+    networks:
+      - app-network
+
+  database:
+    image: postgres:latest
+    env_file:
+      - ./app/.env
+    environment:
+      POSTGRES_DB: anomaly_detector
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./database/data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
