@@ -16,11 +16,21 @@ class UserORM(Base):
     email = Column(String(255), unique=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     role = Column(SAEnum("user", "admin", name="user_role"), default="user", nullable=False)
-    balance = Column(Float, default=0.0, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(MSK))
 
+    balance_account = relationship("BalanceORM", back_populates="user", uselist=False)
     transactions = relationship("TransactionORM", back_populates="user", order_by="TransactionORM.created_at.desc()")
     tasks = relationship("TaskORM", back_populates="user", order_by="TaskORM.created_at.desc()")
+
+
+class BalanceORM(Base):
+    __tablename__ = "balances"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    amount = Column(Float, default=0.0, nullable=False)
+
+    user = relationship("UserORM", back_populates="balance_account")
 
 
 class MLModelORM(Base):

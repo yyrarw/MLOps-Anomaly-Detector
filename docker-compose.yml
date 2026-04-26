@@ -6,8 +6,44 @@ services:
     volumes:
       - ./app/src:/app/src
     depends_on:
-      - database
-      - rabbitmq
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  worker-1:
+    build: ./app
+    command: python -m src.worker
+    env_file:
+      - ./app/.env
+    environment:
+      WORKER_ID: worker-1
+    volumes:
+      - ./app/src:/app/src
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  worker-2:
+    build: ./app
+    command: python -m src.worker
+    env_file:
+      - ./app/.env
+    environment:
+      WORKER_ID: worker-2
+    volumes:
+      - ./app/src:/app/src
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -29,6 +65,11 @@ services:
     volumes:
       - rabbitmq_volume:/var/lib/rabbitmq
     restart: on-failure
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - app-network
 
@@ -42,6 +83,11 @@ services:
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - postgres_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     networks:
       - app-network
 
