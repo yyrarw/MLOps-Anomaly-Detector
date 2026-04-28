@@ -27,6 +27,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
     networks:
       - app-network
 
@@ -44,6 +46,19 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    environment:
+      API_URL: http://app:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - app
     networks:
       - app-network
 
@@ -56,6 +71,30 @@ services:
       - "443:443"
     networks:
       - app-network
+
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_volume:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-network
+
+  ollama-init:
+    image: ollama/ollama
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "tinyllama"]
+    depends_on:
+      ollama:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: "no"
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -94,6 +133,7 @@ services:
 volumes:
   postgres_volume:
   rabbitmq_volume:
+  ollama_volume:
 
 networks:
   app-network:

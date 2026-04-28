@@ -40,3 +40,12 @@ class PredictionHistoryResponse(BaseModel):
     status: str
     credits_charged: float
     created_at: datetime
+
+
+class TaskDetailResponse(BaseModel):
+    task_id: int
+    model_id: int
+    status: str
+    credits_charged: float
+    created_at: datetime
+    anomalies: List[Any] | None = None
