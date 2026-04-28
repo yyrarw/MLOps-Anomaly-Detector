@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from src.database import engine, SessionLocal, Base
-from src.models import UserORM, MLModelORM, TransactionORM
+from src.models import BalanceORM, MLModelORM, TransactionORM, UserORM
 
 
 def init_db():
@@ -20,57 +20,29 @@ def init_db():
 
 def _seed_users(db: Session):
     demo_users = [
-        {
-            "email": "demo@example.com",
-            "hashed_password": "hashed_demo_password",
-            "role": "user",
-            "balance": 100.0,
-        },
-        {
-            "email": "admin@example.com",
-            "hashed_password": "hashed_admin_password",
-            "role": "admin",
-            "balance": 500.0,
-        },
+        {"email": "demo@example.com", "hashed_password": "hashed_demo_password", "role": "user", "balance": 100.0},
+        {"email": "admin@example.com", "hashed_password": "hashed_admin_password", "role": "admin", "balance": 500.0},
     ]
 
     for data in demo_users:
-        existing = db.query(UserORM).filter_by(email=data["email"]).first()
-        if existing:
+        if db.query(UserORM).filter_by(email=data["email"]).first():
             continue
 
-        user = UserORM(**data)
+        user = UserORM(email=data["email"], hashed_password=data["hashed_password"], role=data["role"])
         db.add(user)
         db.flush()
 
-        db.add(TransactionORM(
-            user_id=user.id,
-            amount=data["balance"],
-            type="topup",
-        ))
+        db.add(BalanceORM(user_id=user.id, amount=data["balance"]))
+        db.add(TransactionORM(user_id=user.id, amount=data["balance"], type="topup"))
 
 
 def _seed_ml_models(db: Session):
     models = [
-        {
-            "name": "IsolationForest",
-            "description": "Древовидная модель для поиска аномалий в многомерных данных",
-            "cost_per_request": 5.0,
-        },
-        {
-            "name": "ZScoreDetector",
-            "description": "Статистический детектор на основе Z-оценки",
-            "cost_per_request": 2.0,
-        },
-        {
-            "name": "AutoencoderDetector",
-            "description": "Нейросетевой автоэнкодер для обнаружения аномалий",
-            "cost_per_request": 10.0,
-        },
+        {"name": "IsolationForest", "description": "Древовидная модель для поиска аномалий в многомерных данных", "cost_per_request": 5.0},
+        {"name": "ZScoreDetector", "description": "Статистический детектор на основе Z-оценки", "cost_per_request": 2.0},
+        {"name": "AutoencoderDetector", "description": "Нейросетевой автоэнкодер для обнаружения аномалий", "cost_per_request": 10.0},
     ]
 
     for data in models:
-        existing = db.query(MLModelORM).filter_by(name=data["name"]).first()
-        if existing:
-            continue
-        db.add(MLModelORM(**data))
+        if not db.query(MLModelORM).filter_by(name=data["name"]).first():
+            db.add(MLModelORM(**data))
