@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = (
+DATABASE_URL = os.getenv("DATABASE_URL") or (
     f"postgresql://{os.getenv('DATABASE_USER', 'postgres')}:"
     f"{os.getenv('DATABASE_PASSWORD', 'postgres')}@"
     f"{os.getenv('DATABASE_HOST', 'localhost')}:"
@@ -10,7 +10,8 @@ DATABASE_URL = (
     f"{os.getenv('DATABASE_NAME', 'anomaly_detector')}"
 )
 
-engine = create_engine(DATABASE_URL)
+_kwargs = {"connect_args": {"check_same_thread": False}} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, **_kwargs)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
 
