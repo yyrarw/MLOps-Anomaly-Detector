@@ -329,6 +329,33 @@ def page_history():
                     "created_at": "Дата/время",
                 })
                 st.dataframe(df, use_container_width=True)
+
+                st.divider()
+                st.subheader("Результат задачи")
+                task_ids = [item["task_id"] for item in data]
+                selected_id = st.selectbox("Выберите задачу", task_ids, format_func=lambda x: f"Задача #{x}")
+
+                if st.button("Показать результат"):
+                    r2 = api_get(f"/history/predictions/{selected_id}")
+                    if r2 is None:
+                        return
+                    if r2.status_code == 200:
+                        detail = r2.json()
+                        status = detail["status"]
+                        anomalies = detail.get("anomalies")
+
+                        if status == "pending" or status == "processing":
+                            st.info(f"Задача ещё обрабатывается (статус: `{status}`). Повторите позже.")
+                        elif status == "failed":
+                            st.error("Задача завершилась с ошибкой. Средства возвращены на баланс.")
+                        elif not anomalies:
+                            st.success("Аномалий не обнаружено.")
+                        else:
+                            st.warning(f"Найдено аномалий: **{len(anomalies)}**")
+                            adf = pd.DataFrame(anomalies)
+                            st.dataframe(adf, use_container_width=True)
+                    else:
+                        st.error(f"Ошибка: {error_message(r2)}")
         else:
             st.error(f"Ошибка: {error_message(r)}")
 

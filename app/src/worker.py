@@ -202,12 +202,14 @@ def _save_result(task_id: int, features: list, anomalies: list) -> None:
             log.error("[%s] Task %s not found in DB", WORKER_ID, task_id)
             return
         task.status = "completed"
+        debit = db.query(TransactionORM).filter_by(task_id=task_id, type="debit").first()
+        credits_charged = debit.amount if debit else 0.0
         db.add(PredictionResultORM(
             task_id=task_id,
             anomalies=anomalies,
             valid_rows_count=len(features),
             invalid_rows=[],
-            credits_charged=0.0,
+            credits_charged=credits_charged,
         ))
         db.commit()
     except Exception as exc:
